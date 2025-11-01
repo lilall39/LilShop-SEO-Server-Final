@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Outil SEO Automatique – Lil Shop</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🚀 Outil SEO Lil-Shop</h1>
+
+
+
+  <section>
+    <h2>2️⃣ Génération de contenu SEO</h2>
+    <input type="text" id="nomProduit" placeholder="Nom du produit">
+    <textarea id="descProduit" placeholder="Courte description..."></textarea><br>
+    <button onclick="genererMeta()">Générer le titre + meta + hashtags</button>
+    <button onclick="recommencer()">🔄 Recommencer</button>
+
+    <pre id="resultMeta"></pre>
+    <button id="copyMetaBtn" style="display:none;" onclick="copierMeta()">📋 Copier Titre + Meta</button>
+
+    <h3>📦 Hashtags générés</h3>
+
+    <div id="hashtagsVinted"></div>
+    <button id="copyVintedBtn" style="display:none;" onclick="copierVinted()">📋 Copier Hashtags Vinted</button>
+
+    <div id="hashtagsShopify"></div>
+    <button id="copyShopifyBtn" style="display:none;" onclick="copierShopify()">📋 Copier Hashtags Shopify</button>
+
+    <div id="copyMsg" class="copy-success"></div>
+  </section>
+
+  <footer>🧾 Lil-Shop – Outil SEO partagé</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
