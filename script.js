@@ -31,7 +31,6 @@ async function pingGoogle() {
   }
 }
 
-
 // 🟣 Génération SEO + Hashtags
 async function genererMeta() {
   const nomProduit = document.getElementById("nomProduit").value.trim();
@@ -45,7 +44,7 @@ async function genererMeta() {
   hashtagsShopify.textContent = "";
 
   try {
-    // ✅ Appel à ton serveur (et non à l’API OpenAI directe)
+    // ✅ Appel à la fonction serveur Vercel (pas directement OpenAI)
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,9 +52,12 @@ async function genererMeta() {
     });
 
     const data = await response.json();
-    if (!data.result) throw new Error("Réponse inattendue du serveur : " + JSON.stringify(data));
 
-    const texte = data.result;
+    // 🧠 Vérifie que la réponse contient bien les données d'OpenAI
+    if (!data.choices || !data.choices[0].message?.content)
+      throw new Error("Réponse inattendue du serveur : " + JSON.stringify(data));
+
+    const texte = data.choices[0].message.content;
 
     // Extraction
     const titre = texte.match(/\*\*Titre SEO\s*:\*\*\s*(.+)/i)?.[1] || "Titre non trouvé";
@@ -102,8 +104,7 @@ async function genererMeta() {
   } catch (error) {
     resultMeta.textContent = "❌ Une erreur s'est produite : " + error.message;
   }
-} // 🟢 ← fermeture de la fonction genererMeta
-
+}
 
 // 🧾 Copie individuelle
 function copierMeta() {
@@ -133,3 +134,4 @@ function recommencer() {
   document.getElementById("copyVintedBtn").style.display = "none";
   document.getElementById("copyShopifyBtn").style.display = "none";
 }
+

@@ -1,18 +1,13 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
+import os
 
 app = Flask(__name__)
-# ✅ Autorise les requêtes du navigateur
 CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-import os
-from openai import OpenAI
 
 # ✅ Récupère la clé OpenAI depuis une variable d'environnement (sécurité)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 
 @app.route("/api/meta", methods=["POST"])
 def generer_meta():
@@ -36,7 +31,6 @@ Exigences :
 - Langue : français.
 """
 
-
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
@@ -45,6 +39,6 @@ Exigences :
     texte = response.choices[0].message.content
     return jsonify({"result": texte})
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
