@@ -68,24 +68,50 @@ async function genererMeta() {
     let shopify = texte.match(/\*\*Hashtags Shopify\s*:\*\*\s*([\s\S]+)/i)?.[1]?.trim() || "";
 
     // 🧱 Vérification du nombre de hashtags Vinted
-    let hashtagsArray = vinted.match(/#[\wàâçéèêëîïôöùûüÿ\-]+/gi) || [];
+let hashtagsArray = vinted.match(/#[\wàâçéèêëîïôöùûüÿ\-]+/gi) || [];
 
-    // 🧩 Hashtags fixes (toujours présents)
-    const fixedTags = [
-      "#italie", "#espagne", "#portugal", "#angleterre", "#suisse",
-      "#belgique", "#paysbas", "#pascher", "#tendance", "#mode",
-      "#femme", "#homme", "#enfant", "#jeune", "#cadeau",
-      "#idée", "#fête", "#cadeaufemme", "#cadeauartisanal"
-    ];
+// 🧩 Hashtags fixes (toujours présents)
+const fixedTagsVinted = [
+  "#italie", "#espagne", "#portugal", "#angleterre", "#suisse", "#belgique", "#paysbas",
+  "#pascher", "#tendance", "#mode", "#femme", "#homme", "#enfant", "#jeune",
+  "#cadeau", "#idée", "#fête", "#cadeaufemme", "#cadeauartisanal"
+];
 
-    // ✅ Ajoute les hashtags fixes s’ils manquent
-    hashtagsArray = [...new Set([...hashtagsArray, ...fixedTags])];
+// ✅ Ajoute les hashtags fixes s’ils manquent
+fixedTagsVinted.forEach(tag => {
+  if (!hashtagsArray.includes(tag)) hashtagsArray.push(tag);
+});
 
-    // Complète jusqu’à 40
-    while (hashtagsArray.length < 40) {
-      const next = fixedTags[hashtagsArray.length % fixedTags.length];
-      hashtagsArray.push(next);
-    }
+// Complète jusqu’à 40 hashtags maximum
+while (hashtagsArray.length < 40) {
+  const next = fixedTagsVinted[hashtagsArray.length % fixedTagsVinted.length];
+  hashtagsArray.push(next);
+}
+
+// Nettoyage final et recomposition
+hashtagsArray = [...new Set(hashtagsArray)];
+vinted = hashtagsArray.slice(0, 40).join(" ");
+
+// 🛍️ Shopify : assurer au moins 40 mots-clés et inclure les pays
+let shopifyArray = shopify
+  .replace(/#/g, "") // enlève les #
+  .split(/,|\s+/)
+  .map(t => t.trim())
+  .filter(Boolean);
+
+const fixedTagsShopify = fixedTagsVinted.map(tag => tag.replace("#", ""));
+fixedTagsShopify.forEach(tag => {
+  if (!shopifyArray.includes(tag)) shopifyArray.push(tag);
+});
+
+// Complète jusqu’à 40
+while (shopifyArray.length < 40) {
+  const next = fixedTagsShopify[shopifyArray.length % fixedTagsShopify.length];
+  shopifyArray.push(next);
+}
+
+shopifyArray = [...new Set(shopifyArray)];
+shopify = shopifyArray.slice(0, 40).join(", ");
 
     // Nettoyage final
     hashtagsArray = [...new Set(hashtagsArray)];
