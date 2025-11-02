@@ -76,11 +76,25 @@ async function genererMeta() {
       "#espagne", "#portugal", "#angleterre", "#suisse", "#belgique", "#paysbas"
     ];
 
-    // Complète jusqu’à 40 hashtags
-    while (hashtagsArray.length < 40) {
-      const next = baseTags[hashtagsArray.length % baseTags.length];
-      hashtagsArray.push(next);
-    }
+    // ✅ Ajoute les hashtags fixes (pays, etc.) s’ils ne sont pas déjà présents
+const fixedTags = [
+  "#italie", "#espagne", "#portugal", "#angleterre", "#suisse",
+  "#belgique", "#paysbas", "#pascher", "#tendance", "#mode",
+  "#femme", "#homme", "#enfant", "#jeune", "#cadeau",
+  "#idée", "#fête", "#cadeaufemme", "#cadeauartisanal"
+];
+
+// Fusionne les hashtags générés + fixes
+hashtagsArray = [...new Set([...hashtagsArray, ...fixedTags])];
+
+// Complète jusqu’à 40 hashtags
+while (hashtagsArray.length < 40) {
+  const next = fixedTags[hashtagsArray.length % fixedTags.length];
+  hashtagsArray.push(next);
+}
+
+vinted = hashtagsArray.slice(0, 40).join(" ");
+
 
     // Nettoyage doublons + recomposition
     hashtagsArray = [...new Set(hashtagsArray)];
