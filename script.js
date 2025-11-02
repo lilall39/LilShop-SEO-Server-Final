@@ -86,13 +86,23 @@ async function genererMeta() {
     hashtagsArray = [...new Set(hashtagsArray)];
     vinted = hashtagsArray.slice(0, 40).join(" ");
 
-    // 🛍️ Shopify : assurer au moins 40 mots-clés
-    let shopifyArray = shopify.split(/,|\n/).map(t => t.trim()).filter(Boolean);
-    while (shopifyArray.length < 40) {
-      const next = baseTags[shopifyArray.length % baseTags.length].replace("#", "");
-      shopifyArray.push(next);
-    }
-    shopify = [...new Set(shopifyArray)].slice(0, 40).join(", ");
+    // 🛍️ Shopify : assurer au moins 40 mots-clés sans dièses
+let shopifyArray = shopify
+  .replace(/#/g, "") // supprime tous les #
+  .split(/,|\s+/) // sépare par virgule ou espace
+  .map(t => t.trim())
+  .filter(Boolean);
+
+while (shopifyArray.length < 40) {
+  const next = baseTags[shopifyArray.length % baseTags.length].replace("#", "");
+  shopifyArray.push(next);
+}
+
+// Nettoyage final + formatage correct
+shopify = [...new Set(shopifyArray)]
+  .slice(0, 40)
+  .join(", ");
+
 
     // ✅ Affichage final
     resultMeta.innerHTML = `<b>Titre SEO :</b> ${titre}<br><br><b>Meta Description :</b> ${meta}`;
