@@ -1,4 +1,4 @@
-// 🟢 Indexation Google améliorée 
+ // 🟢 Indexation Google améliorée  
 async function pingGoogle() {
   const sitemapUrl = document.getElementById("sitemapUrl").value.trim();
   const resultPing = document.getElementById("resultPing");
@@ -25,7 +25,6 @@ async function pingGoogle() {
 
     // 🌀 Soumission aussi à Bing pour un meilleur SEO
     await fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
-
   } catch (error) {
     resultPing.innerHTML = "❌ Une erreur s'est produite : " + error.message;
   }
@@ -62,7 +61,7 @@ async function genererMeta() {
 
     const texte = data.result;
 
-    // 🧩 Extraction des différentes sections
+    // 🧩 Extraction des sections principales
     const titre = texte.match(/\*\*Titre SEO\s*:\*\*\s*(.+)/i)?.[1] || "Titre non trouvé";
     const meta = texte.match(/\*\*Meta Description\s*:\*\*\s*(.+)/i)?.[1] || "Meta description non trouvée";
     let vinted = texte.match(/\*\*Hashtags Vinted\s*:\*\*\s*([\s\S]+?)\n\*\*Hashtags Shopify/i)?.[1]?.trim() || "";
@@ -70,60 +69,52 @@ async function genererMeta() {
 
     // 🧱 Vérification du nombre de hashtags Vinted
     let hashtagsArray = vinted.match(/#[\wàâçéèêëîïôöùûüÿ\-]+/gi) || [];
-    const baseTags = [
-      "#pascher", "#tendance", "#mode", "#femme", "#homme", "#enfant", "#pas", "#cher", "#jeune",
-      "#cadeau", "#idée", "#cadeau", "#fête", "#cadeaufemme", "#cadeauartisanal", "#italie",
-      "#espagne", "#portugal", "#angleterre", "#suisse", "#belgique", "#paysbas"
+
+    // 🧩 Hashtags fixes (toujours présents)
+    const fixedTags = [
+      "#italie", "#espagne", "#portugal", "#angleterre", "#suisse",
+      "#belgique", "#paysbas", "#pascher", "#tendance", "#mode",
+      "#femme", "#homme", "#enfant", "#jeune", "#cadeau",
+      "#idée", "#fête", "#cadeaufemme", "#cadeauartisanal"
     ];
 
-    // ✅ Ajoute les hashtags fixes (pays, etc.) s’ils ne sont pas déjà présents
-const fixedTags = [
-  "#italie", "#espagne", "#portugal", "#angleterre", "#suisse",
-  "#belgique", "#paysbas", "#pascher", "#tendance", "#mode",
-  "#femme", "#homme", "#enfant", "#jeune", "#cadeau",
-  "#idée", "#fête", "#cadeaufemme", "#cadeauartisanal"
-];
+    // ✅ Ajoute les hashtags fixes s’ils manquent
+    hashtagsArray = [...new Set([...hashtagsArray, ...fixedTags])];
 
-// Fusionne les hashtags générés + fixes
-hashtagsArray = [...new Set([...hashtagsArray, ...fixedTags])];
+    // Complète jusqu’à 40
+    while (hashtagsArray.length < 40) {
+      const next = fixedTags[hashtagsArray.length % fixedTags.length];
+      hashtagsArray.push(next);
+    }
 
-// Complète jusqu’à 40 hashtags
-while (hashtagsArray.length < 40) {
-  const next = fixedTags[hashtagsArray.length % fixedTags.length];
-  hashtagsArray.push(next);
-}
-
-vinted = hashtagsArray.slice(0, 40).join(" ");
-
-
-    // Nettoyage doublons + recomposition
+    // Nettoyage final
     hashtagsArray = [...new Set(hashtagsArray)];
     vinted = hashtagsArray.slice(0, 40).join(" ");
 
-    // 🛍️ Shopify : assurer au moins 40 mots-clés sans dièses
-let shopifyArray = shopify
-  .replace(/#/g, "") // supprime tous les #
-  .split(/,|\s+/) // sépare par virgule ou espace
-  .map(t => t.trim())
-  .filter(Boolean);
+    // 🛍️ Shopify : assurer au moins 40 mots-clés
+    let shopifyArray = shopify
+      .replace(/#/g, "") // enlève les #
+      .split(/,|\s+/)
+      .map(t => t.trim())
+      .filter(Boolean);
 
-while (shopifyArray.length < 40) {
-  const next = baseTags[shopifyArray.length % baseTags.length].replace("#", "");
-  shopifyArray.push(next);
-}
+    // Ajoute les versions sans dièse
+    const fixedShopify = fixedTags.map(tag => tag.replace("#", ""));
+    shopifyArray = [...new Set([...shopifyArray, ...fixedShopify])];
 
-// Nettoyage final + formatage correct
-shopify = [...new Set(shopifyArray)]
-  .slice(0, 40)
-  .join(", ");
+    while (shopifyArray.length < 40) {
+      const next = fixedShopify[shopifyArray.length % fixedShopify.length];
+      shopifyArray.push(next);
+    }
 
+    shopify = shopifyArray.slice(0, 40).join(", ");
 
     // ✅ Affichage final
     resultMeta.innerHTML = `<b>Titre SEO :</b> ${titre}<br><br><b>Meta Description :</b> ${meta}`;
     hashtagsVinted.innerHTML = `<b>Hashtags Vinted :</b><br>${vinted}`;
     hashtagsShopify.innerHTML = `<b>Hashtags Shopify :</b><br>${shopify}`;
 
-    // Affiche les boutons de copie
+    // Boutons de copie
     document.getElementById("copyMetaBtn").style.display = "inline-block";
     document.getElementById("copyVintedBtn").style.display = "inline-block";
     document.getElementById("copyShopifyBtn").style.display = "inline-block";
