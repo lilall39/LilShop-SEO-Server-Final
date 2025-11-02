@@ -1,4 +1,4 @@
-// 🟢 Indexation Google améliorée
+// 🟢 Indexation Google améliorée 
 async function pingGoogle() {
   const sitemapUrl = document.getElementById("sitemapUrl").value.trim();
   const resultPing = document.getElementById("resultPing");
@@ -45,34 +45,17 @@ async function genererMeta() {
   hashtagsShopify.textContent = "";
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    // ✅ Appel à ton serveur (et non à l’API OpenAI directe)
+    const response = await fetch("/api/generate", {
       method: "POST",
-      headers: {
-"Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-
-
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.7,
-        messages: [
-          {
-            role: "system",
-            content: "Tu es un expert SEO Shopify et Vinted. Réponds toujours dans ce format clair :\n\n**Titre SEO :** ...\n**Meta Description :** ...\n**Hashtags Vinted :** ...\n**Hashtags Shopify :** ..."
-          },
-          {
-            role: "user",
-            content: `Produit : ${nomProduit}\nDescription : ${descProduit}\nGénère :\n1. Un titre SEO court et percutant\n2. Une meta description Google optimisée\n3. 40 hashtags vendeurs pour Vinted (#...)\n4. 40 hashtags vendeurs pour Shopify (séparés par des virgules, sans #)`
-          }
-        ]
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nomProduit, descProduit })
     });
 
     const data = await response.json();
-    if (!data.choices || !data.choices[0].message)
-      throw new Error("Format API inattendu : " + JSON.stringify(data));
+    if (!data.result) throw new Error("Réponse inattendue du serveur : " + JSON.stringify(data));
 
-    const texte = data.choices[0].message.content;
+    const texte = data.result;
 
     // Extraction
     const titre = texte.match(/\*\*Titre SEO\s*:\*\*\s*(.+)/i)?.[1] || "Titre non trouvé";
@@ -116,7 +99,7 @@ async function genererMeta() {
     document.getElementById("copyVintedBtn").style.display = "inline-block";
     document.getElementById("copyShopifyBtn").style.display = "inline-block";
 
-   } catch (error) {
+  } catch (error) {
     resultMeta.textContent = "❌ Une erreur s'est produite : " + error.message;
   }
 } // 🟢 ← fermeture de la fonction genererMeta
@@ -150,4 +133,3 @@ function recommencer() {
   document.getElementById("copyVintedBtn").style.display = "none";
   document.getElementById("copyShopifyBtn").style.display = "none";
 }
-
