@@ -31,6 +31,7 @@ async function pingGoogle() {
   }
 }
 
+
 // 🟣 Génération SEO + Hashtags
 async function genererMeta() {
   const nomProduit = document.getElementById("nomProduit").value.trim();
@@ -44,7 +45,7 @@ async function genererMeta() {
   hashtagsShopify.textContent = "";
 
   try {
-    // ✅ Appel à la fonction serveur Vercel (pas directement OpenAI)
+    // ✅ Appel à ton backend hébergé sur Vercel
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,19 +54,21 @@ async function genererMeta() {
 
     const data = await response.json();
 
-    // 🧠 Vérifie que la réponse contient bien les données d'OpenAI
-    if (!data.choices || !data.choices[0].message?.content)
-      throw new Error("Réponse inattendue du serveur : " + JSON.stringify(data));
+    // 🧠 Vérifie que le format est correct
+    if (!data || typeof data.result !== "string") {
+      console.log("Réponse serveur :", data);
+      throw new Error("Le serveur a répondu, mais le format est inattendu.");
+    }
 
-    const texte = data.choices[0].message.content;
+    const texte = data.result;
 
-    // Extraction
+    // 🧩 Extraction des différentes sections
     const titre = texte.match(/\*\*Titre SEO\s*:\*\*\s*(.+)/i)?.[1] || "Titre non trouvé";
     const meta = texte.match(/\*\*Meta Description\s*:\*\*\s*(.+)/i)?.[1] || "Meta description non trouvée";
     let vinted = texte.match(/\*\*Hashtags Vinted\s*:\*\*\s*([\s\S]+?)\n\*\*Hashtags Shopify/i)?.[1]?.trim() || "";
     let shopify = texte.match(/\*\*Hashtags Shopify\s*:\*\*\s*([\s\S]+)/i)?.[1]?.trim() || "";
 
-    // 🧩 Vérification du nombre de hashtags Vinted
+    // 🧱 Vérification du nombre de hashtags Vinted
     let hashtagsArray = vinted.match(/#[\wàâçéèêëîïôöùûüÿ\-]+/gi) || [];
     const baseTags = [
       "#pascher", "#tendance", "#mode", "#femme", "#homme", "#enfant", "#pas", "#cher", "#jeune",
@@ -91,12 +94,12 @@ async function genererMeta() {
     }
     shopify = [...new Set(shopifyArray)].slice(0, 40).join(", ");
 
-    // Affichage
+    // ✅ Affichage final
     resultMeta.innerHTML = `<b>Titre SEO :</b> ${titre}<br><br><b>Meta Description :</b> ${meta}`;
     hashtagsVinted.innerHTML = `<b>Hashtags Vinted :</b><br>${vinted}`;
     hashtagsShopify.innerHTML = `<b>Hashtags Shopify :</b><br>${shopify}`;
 
-    // Boutons visibles
+    // Affiche les boutons de copie
     document.getElementById("copyMetaBtn").style.display = "inline-block";
     document.getElementById("copyVintedBtn").style.display = "inline-block";
     document.getElementById("copyShopifyBtn").style.display = "inline-block";
@@ -105,6 +108,7 @@ async function genererMeta() {
     resultMeta.textContent = "❌ Une erreur s'est produite : " + error.message;
   }
 }
+
 
 // 🧾 Copie individuelle
 function copierMeta() {
@@ -122,6 +126,7 @@ function copierTexte(texte) {
   msg.textContent = "✅ Copié !";
   setTimeout(() => (msg.textContent = ""), 2000);
 }
+
 
 // 🔄 Recommencer
 function recommencer() {
