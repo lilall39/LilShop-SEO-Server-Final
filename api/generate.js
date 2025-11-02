@@ -1,8 +1,8 @@
- export const config = {
+export const config = {
   runtime: "edge",
 };
 
-// ✅ Version compatible avec Vercel Edge Functions
+// ✅ Version finale compatible Vercel (Edge Function)
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
@@ -27,7 +27,7 @@ export default async function handler(req) {
           {
             role: "system",
             content:
-              "Tu es un expert SEO Shopify et Vinted. Réponds toujours dans ce format clair : **Titre SEO :** ... **Meta Description :** ... **Hashtags Vinted :** ... **Hashtags Shopify :** ...",
+              "Tu es un expert SEO Shopify et Vinted. Réponds toujours dans ce format clair : **Titre SEO :** ..., **Meta Description :** ..., **Hashtags Vinted :** ..., **Hashtags Shopify :** ...",
           },
           {
             role: "user",
