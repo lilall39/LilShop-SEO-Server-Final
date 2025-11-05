@@ -2,7 +2,7 @@
   runtime: "edge",
 };
 
-// ✅ Lil-Shop SEO – Version finale avec détection automatique locale de l’état
+// ✅ Lil-Shop SEO – Version finale logique (neuf / TBE / vintage)
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
@@ -14,21 +14,37 @@ export default async function handler(req) {
       );
     }
 
-    // 🧠 Détection intelligente de l’état du produit
+    // 🧠 Détection locale intelligente
     const descLower = descProduit.toLowerCase();
     let etat = "";
+    let forcerNeuf = false;
+    let forcerTBE = false;
+    let forcerVintage = false;
 
     if (descLower.includes("neuf") || descLower.includes("neuve")) {
       etat = "article neuf";
+      forcerNeuf = true;
     } else if (
       descLower.includes("tbe") ||
       descLower.includes("seconde main") ||
       descLower.includes("occasion")
     ) {
       etat = "seconde main TBE";
+      forcerTBE = true;
     } else if (descLower.includes("vintage")) {
       etat = "vintage";
+      forcerVintage = true;
     }
+
+    // 🧩 Règle : si "neuf" est présent, on interdit toute mention de "seconde main"
+    const contrainteEtat =
+      forcerNeuf
+        ? "Le titre et la description doivent clairement indiquer que le produit est neuf. Interdiction absolue de mentionner 'seconde main' ou 'TBE'."
+        : forcerTBE
+        ? "Le titre doit inclure 'seconde main TBE'."
+        : forcerVintage
+        ? "Le titre doit inclure le mot 'vintage'."
+        : "Ne pas indiquer d’état si non précisé.";
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -43,15 +59,15 @@ export default async function handler(req) {
           {
             role: "system",
             content: `Tu es un expert SEO e-commerce pour Shopify et Vinted.
-Ton objectif : produire des textes parfaits pour Google Search, clairs, naturels et vendeurs.
+Ton objectif : produire des textes optimisés pour Google, clairs, vendeurs, et adaptés à l’état du produit.
 
 🧠 Règles :
 - Titre SEO : < 110 caractères
 - Meta description : 140–160 caractères
-- Inclure la marque, la matière, le style, la couleur, et l’état du produit (si fourni)
-- Ton : professionnel, clair, fluide, inspiré du style des boutiques de mode
+- Inclure la marque, la matière, la couleur, le style, et l’état du produit
+- Ton : professionnel, fluide, et vendeur
 - Ne jamais tout écrire en majuscules
-- Format de sortie obligatoire :
+- Sortie formatée ainsi :
 **Titre SEO :** ...
 **Meta Description :** ...
 **Hashtags Vinted :** ...
@@ -59,17 +75,19 @@ Ton objectif : produire des textes parfaits pour Google Search, clairs, naturels
           },
           {
             role: "user",
-            content: `Nom du produit : ${nomProduit}
-Description détaillée : ${descProduit}
+            content: `
+Nom du produit : ${nomProduit}
+Description : ${descProduit}
 État détecté : ${etat || "non précisé"}
+${contrainteEtat}
 
 Génère :
-1️⃣ Un titre SEO optimisé pour Google (< 110 caractères)
+1️⃣ Un titre SEO optimisé Google (< 110 caractères)
 2️⃣ Une meta description de 140–160 caractères
-3️⃣ 40 hashtags Vinted vendeurs et pertinents
+3️⃣ 40 hashtags Vinted vendeurs
 4️⃣ 40 hashtags Shopify séparés par des virgules
 
-Inclure systématiquement ces hashtags fixes : 
+Inclure systématiquement ces hashtags fixes :
 #${nomProduit.replace(/\s+/g, '').toLowerCase()}, #pascher, #tendance, #mode, #femme, #fille, #homme, #enfant, #jeune, #cadeau, #idéeCadeau, #fête, #cadeauFemme, #cadeauArtisanal, #italie, #espagne, #portugal, #angleterre, #suisse, #belgique, #paysBas.`,
           },
         ],
@@ -94,6 +112,7 @@ Inclure systématiquement ces hashtags fixes :
     );
   }
 }
+
 
 
 
