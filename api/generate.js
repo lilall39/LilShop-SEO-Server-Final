@@ -2,7 +2,7 @@
   runtime: "edge",
 };
 
-// ✅ Lil-Shop SEO – Version améliorée avec détection de l’état
+// ✅ Lil-Shop SEO – Version finale avec détection automatique locale de l’état
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
@@ -12,6 +12,22 @@ export default async function handler(req) {
         JSON.stringify({ error: "Champs manquants" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    // 🧠 Détection intelligente de l’état du produit
+    const descLower = descProduit.toLowerCase();
+    let etat = "";
+
+    if (descLower.includes("neuf") || descLower.includes("neuve")) {
+      etat = "article neuf";
+    } else if (
+      descLower.includes("tbe") ||
+      descLower.includes("seconde main") ||
+      descLower.includes("occasion")
+    ) {
+      etat = "seconde main TBE";
+    } else if (descLower.includes("vintage")) {
+      etat = "vintage";
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -32,14 +48,9 @@ Ton objectif : produire des textes parfaits pour Google Search, clairs, naturels
 🧠 Règles :
 - Titre SEO : < 110 caractères
 - Meta description : 140–160 caractères
-- Inclure la marque, la matière, le style, l’état, et les mots-clés principaux
-- Déterminer intelligemment l’état :
-   • Si le texte contient "neuf" ou "neuve" → écrire "article neuf"
-   • Si le texte contient "TBE", "seconde main", "occasion" → écrire "seconde main TBE"
-   • Si le texte contient "vintage" → écrire "vintage"
-   • Sinon, ne pas ajouter de mention d’état
-- Ne jamais tout mettre en majuscules
+- Inclure la marque, la matière, le style, la couleur, et l’état du produit (si fourni)
 - Ton : professionnel, clair, fluide, inspiré du style des boutiques de mode
+- Ne jamais tout écrire en majuscules
 - Format de sortie obligatoire :
 **Titre SEO :** ...
 **Meta Description :** ...
@@ -49,7 +60,8 @@ Ton objectif : produire des textes parfaits pour Google Search, clairs, naturels
           {
             role: "user",
             content: `Nom du produit : ${nomProduit}
-Description : ${descProduit}
+Description détaillée : ${descProduit}
+État détecté : ${etat || "non précisé"}
 
 Génère :
 1️⃣ Un titre SEO optimisé pour Google (< 110 caractères)
@@ -82,5 +94,6 @@ Inclure systématiquement ces hashtags fixes :
     );
   }
 }
+
 
 
