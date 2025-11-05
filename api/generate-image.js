@@ -1,4 +1,4 @@
-  export const config = { runtime: "edge" };
+export const config = { runtime: "edge" };
 
 export default async function handler(req) {
   try {
@@ -23,14 +23,8 @@ export default async function handler(req) {
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: "Décris précisément le produit visible sur cette image en une phrase courte. Si tu ne vois rien ou si l’image est vide, dis-le clairement.",
-              },
-              {
-                type: "image_url",
-                image_url: `data:image/jpeg;base64,${imageBase64}`,
-              },
+              { type: "text", text: "Décris l’image brièvement en français." },
+              { type: "image_url", image_url: `data:image/jpeg;base64,${imageBase64}` },
             ],
           },
         ],
@@ -39,14 +33,15 @@ export default async function handler(req) {
 
     const data = await response.json();
 
-    // 💬 Retour complet pour comprendre ce qu'OpenAI répond
+    // 🔍 Affiche la réponse complète (pour debug)
     return new Response(JSON.stringify(data, null, 2), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    // 🔥 Capture toute erreur et l’affiche clairement
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ message: "Erreur côté serveur", details: error.message }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
