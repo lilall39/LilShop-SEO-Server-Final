@@ -2,7 +2,7 @@ export const config = {
   runtime: "edge",
 };
 
-// ✅ Version finale compatible Vercel (Edge Function)
+// ✅ Version finale améliorée Lil-Shop SEO (Edge Function)
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
@@ -26,12 +26,34 @@ export default async function handler(req) {
         messages: [
           {
             role: "system",
-            content:
-              "Tu es un expert SEO Shopify et Vinted. Réponds toujours dans ce format clair : **Titre SEO :** ..., **Meta Description :** ..., **Hashtags Vinted :** ..., **Hashtags Shopify :** ...",
+            content: `Tu es un expert SEO e-commerce pour Shopify et Vinted. 
+Ton objectif est de produire des textes parfaits pour Google Search, clairs, naturels et vendeurs.
+Tu respectes toujours ces contraintes :
+- Titre SEO : moins de 110 caractères
+- Meta description : entre 140 et 160 caractères
+- Ton : professionnel mais accessible, inspiré du style des grandes boutiques de mode
+- Inclure la marque, la matière, le style, l’état (ex : seconde main TBE), et les mots clés principaux.
+- Ne jamais écrire un titre tout en majuscules.
+- Ne jamais répéter "Produit :" ou "Description :" dans la sortie.
+- Toujours formater ainsi : 
+**Titre SEO :** ...
+**Meta Description :** ...
+**Hashtags Vinted :** ...
+**Hashtags Shopify :** ...`,
           },
           {
             role: "user",
-            content: `Produit : ${nomProduit}\nDescription : ${descProduit}\nGénère :\n1. Un titre SEO court\n2. Une meta description optimisée\n3. 40 hashtags Vinted\n4. 40 hashtags Shopify`,
+            content: `Nom du produit : ${nomProduit}
+Courte description : ${descProduit}
+
+Génère :
+1️⃣ Un titre SEO optimisé pour Google (moins de 110 caractères)
+2️⃣ Une meta description de 140–160 caractères
+3️⃣ 40 hashtags Vinted vendeurs et pertinents
+4️⃣ 40 hashtags Shopify séparés par des virgules
+
+⚠️ Dans les hashtags, inclure systématiquement :
+#${nomProduit.replace(/\s+/g, '').toLowerCase()}, #pascher, #tendance, #mode, #femme, #fille, #homme, #enfant, #pascher, #jeune, #cadeau, #idéeCadeau, #fête, #cadeauFemme, #cadeauArtisanal, #italie, #espagne, #portugal, #angleterre, #suisse, #belgique, #paysBas.`,
           },
         ],
       }),
@@ -55,5 +77,4 @@ export default async function handler(req) {
     );
   }
 }
-
 
