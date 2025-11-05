@@ -1,19 +1,20 @@
  // ✅ Lil-Shop SEO – Front-end connecté au serveur /api/generate
-
 async function genererMeta() {
   const nomProduit = document.getElementById("nomProduit").value.trim();
   const descProduit = document.getElementById("descProduit").value.trim();
   const resultMeta = document.getElementById("resultMeta");
+  const copyButtons = document.getElementById("copyButtons");
 
   if (!nomProduit || !descProduit) {
     resultMeta.textContent = "⚠️ Merci de renseigner un nom et une description.";
+    copyButtons.style.display = "none";
     return;
   }
 
   resultMeta.textContent = "⏳ Génération en cours...";
+  copyButtons.style.display = "none";
 
   try {
-    // 🔄 On envoie la requête vers ton serveur Vercel (et non vers l’API OpenAI)
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -25,20 +26,40 @@ async function genererMeta() {
     if (data.error) {
       resultMeta.textContent = "❌ Erreur : " + data.error;
     } else {
-      // 🧾 Affiche proprement le résultat généré par ton serveur
       resultMeta.textContent = data.result;
+      copyButtons.style.display = "block";
     }
   } catch (error) {
     resultMeta.textContent = "❌ Une erreur s’est produite : " + error.message;
+    copyButtons.style.display = "none";
   }
 }
 
-// 🔁 Bouton "Recommencer" : on efface tout
 function recommencer() {
   document.getElementById("nomProduit").value = "";
   document.getElementById("descProduit").value = "";
   document.getElementById("resultMeta").textContent = "";
+  document.getElementById("copyButtons").style.display = "none";
 }
+
+// ✂️ Fonctions de copie
+function copierTexte(motif) {
+  const texte = document.getElementById("resultMeta").textContent;
+  const regex = new RegExp(`${motif}\\s*:?\\s*(.*?)\\s*(?=(\\n[A-Z]|$))`, "is");
+  const match = texte.match(regex);
+  if (match && match[1]) {
+    navigator.clipboard.writeText(match[1].trim());
+    alert(`✅ ${motif} copié !`);
+  } else {
+    alert(`❌ Impossible de copier ${motif}.`);
+  }
+}
+
+function copierTitre() { copierTexte("Titre SEO"); }
+function copierMeta() { copierTexte("Meta Description"); }
+function copierHashtagsVinted() { copierTexte("Hashtags Vinted"); }
+function copierHashtagsShopify() { copierTexte("Hashtags Shopify"); }
+
 
 
 

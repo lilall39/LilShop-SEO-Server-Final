@@ -39,3 +39,18 @@ pre {
   padding: 10px;
   border-radius: 8px;
 }
+#copyButtons button {
+  margin: 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#copyButtons button:hover {
+  background-color: #45a049;
+}
+
