@@ -1,6 +1,6 @@
   export const config = { runtime: "edge" };
 
-// ✅ Lil-Shop SEO — version fiable : état injecté côté serveur
+// ✅ Lil-Shop SEO — Version finale propre (présentation + virgules + sans 🧾)
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
@@ -23,7 +23,7 @@ export default async function handler(req) {
     )
       etat = "seconde main TBE";
 
-    // 🧠 Appel OpenAI sans parler d’état
+    // 🧠 Appel OpenAI : texte brut (pas de markdown ni d’emoji)
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -40,26 +40,29 @@ export default async function handler(req) {
 Règles :
 - Titre SEO : <110 caractères
 - Meta description : 140–160 caractères
-- Inclure marque, matière, couleur, style
-- Ne pas inventer d’état (ne mentionne pas neuf/TBE/vintage)
-- Format :
-**Titre SEO :** ...
-**Meta Description :** ...
-**Hashtags Vinted :** ...
-**Hashtags Shopify :** ...`,
+- Inclure marque, matière, couleur, style, et l’état si fourni
+- Évite le markdown (** ou #)
+- Les hashtags Shopify doivent être séparés par des virgules, pas de #
+- Ne jamais écrire la phrase "Prix d’origine payé en boutique extérieure lors de l’achat neuf"
+- Format clair sans mise en gras :
+Titre SEO : ...
+Meta Description : ...
+Hashtags Vinted : ...
+Hashtags Shopify : ...`,
           },
           {
             role: "user",
             content: `Nom du produit : ${nomProduit}
 Description : ${descProduit}
+État détecté : ${etat || "non précisé"}
 
 Génère :
 1️⃣ Titre SEO (<110 caractères)
 2️⃣ Meta description 140–160 caractères
-3️⃣ 40 hashtags Vinted
-4️⃣ 40 hashtags Shopify (séparés par virgules)
+3️⃣ 40 hashtags Vinted (avec dièses)
+4️⃣ 40 hashtags Shopify (séparés par des virgules)
 
-Inclure systématiquement :
+Inclure systématiquement ces hashtags fixes :
 #${nomProduit.replace(/\s+/g, '').toLowerCase()}, #pascher, #tendance, #mode, #femme, #fille, #homme, #enfant, #jeune, #cadeau, #idéeCadeau, #fête, #cadeauFemme, #cadeauArtisanal, #italie, #espagne, #portugal, #angleterre, #suisse, #belgique, #paysBas.`,
           },
         ],
@@ -69,25 +72,21 @@ Inclure systématiquement :
     const data = await response.json();
     let result = data?.choices?.[0]?.message?.content || "";
 
-    // 🪄 Injection de l’état dans le titre côté serveur
+    // 🪄 Nettoyage & ajout de l’état dans le titre
+    result = result
+      .replaceAll("*", "")
+      .replaceAll("**", "")
+      .replaceAll("🧾", "")
+      .trim();
+
     if (etat) {
       result = result.replace(
-        /(\*\*Titre SEO :\*\*\s*)(.*)/i,
+        /(Titre SEO\s*:\s*)(.*)/i,
         (_, prefix, titre) => {
-          // Si déjà un état incohérent, on le remplace
           titre = titre.replace(/seconde main TBE|article neuf|vintage/gi, "").trim();
           return `${prefix}${titre} – ${etat}`;
         }
       );
-
-      // 🧾 Ajout automatique de la mention pour article neuf
-      if (etat === "article neuf") {
-        result = result.replace(
-          /(\*\*Meta Description :\*\*\s*)(.*)/i,
-          (_, prefix, meta) =>
-            `${prefix}${meta} 🧾Prix d’origine payé en boutique extérieure lors de l’achat neuf.`
-        );
-      }
     }
 
     return new Response(JSON.stringify({ result }), {
@@ -102,8 +101,3 @@ Inclure systématiquement :
     });
   }
 }
-
-
-
-
-
