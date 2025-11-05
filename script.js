@@ -1,46 +1,112 @@
- // Fonction appelée quand on clique sur "Analyser l’image"
-async function analyserImage() {
-  const input = document.querySelector("#imageInput");
-  const message = document.querySelector("#resultMeta");
-  message.textContent = "Analyse en cours...";
+ // -------------------------------
+// 🌟 Outil SEO Lil-Shop – Frontend
+// -------------------------------
 
-  if (!input.files.length) {
-    message.textContent = "❌ Choisis d’abord une image !";
+// 🧠 Génération de texte classique
+async function genererMeta() {
+  const nomProduit = document.getElementById("nomProduit").value.trim();
+  const descProduit = document.getElementById("descProduit").value.trim();
+  const resultMeta = document.getElementById("resultMeta");
+
+  if (!nomProduit) {
+    resultMeta.innerHTML = "⚠️ Veuillez saisir un nom de produit.";
     return;
   }
 
-  const file = input.files[0];
-  const base64 = await toBase64(file);
-
   try {
-    const response = await fetch("/api/generate-image", {
+    resultMeta.innerHTML = "⏳ Génération en cours...";
+
+    const response = await fetch("/api/generate-meta", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: base64.split(",")[1] }),
+      body: JSON.stringify({ nomProduit, descProduit })
     });
 
     const data = await response.json();
 
-    if (data.error) {
-      message.textContent = "⚠️ Erreur : " + data.error;
-      console.log("Réponse erreur :", data);
-    } else {
-      message.textContent = "✅ Résultat :\n\n" + data.result;
+    if (!data || data.error) {
+      throw new Error(data?.error || "Erreur inconnue.");
     }
-  } catch (err) {
-    message.textContent = "❌ Erreur réseau : " + err.message;
+
+    resultMeta.innerHTML = `
+      <strong>Titre SEO :</strong> ${data.titreSEO}<br><br>
+      <strong>Meta Description :</strong> ${data.metaDescription}<br><br>
+      <strong>Hashtags Vinted :</strong> ${data.hashtagsVinted}<br><br>
+      <strong>Hashtags Shopify :</strong> ${data.hashtagsShopify}
+    `;
+
+    document.getElementById("copyButtons").style.display = "block";
+  } catch (error) {
+    resultMeta.innerHTML = `⚠️ Erreur : ${error.message}`;
   }
 }
 
-// Convertir un fichier image en base64
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
+// 🖼️ Analyse d’image
+async function analyserImage() {
+  const fileInput = document.getElementById("imageInput");
+  const resultImage = document.getElementById("resultImage");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    resultImage.innerHTML = "⚠️ Choisissez d’abord une image.";
+    return;
+  }
+
+  resultImage.innerHTML = "🔍 Analyse de l’image en cours...";
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  try {
+    const response = await fetch("/api/generate-image", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!data || data.error) {
+      throw new Error(data?.error || "Aucun résultat reçu.");
+    }
+
+    resultImage.innerHTML = `
+      <strong>Titre SEO :</strong> ${data.titreSEO}<br><br>
+      <strong>Meta Description :</strong> ${data.metaDescription}<br><br>
+      <strong>Hashtags Vinted :</strong> ${data.hashtagsVinted}<br><br>
+      <strong>Hashtags Shopify :</strong> ${data.hashtagsShopify}
+    `;
+  } catch (error) {
+    resultImage.innerHTML = `⚠️ Erreur : ${error.message}`;
+  }
 }
+
+// 🔁 Bouton Recommencer
+function recommencer() {
+  document.getElementById("nomProduit").value = "";
+  document.getElementById("descProduit").value = "";
+  document.getElementById("resultMeta").innerHTML = "";
+  document.getElementById("copyButtons").style.display = "none";
+}
+
+// 📋 Fonctions de copie
+function copierTitre() {
+  copierTexte("Titre SEO");
+}
+function copierMeta() {
+  copierTexte("Meta Description");
+}
+function copierHashtagsVinted() {
+  copierTexte("Hashtags Vinted");
+}
+function copierHashtagsShopify() {
+  copierTexte("Hashtags Shopify");
+}
+
+function copierTexte(texte) {
+  navigator.clipboard.writeText(texte);
+  alert(`✅ ${texte} copié !`);
+}
+
 
 
 
