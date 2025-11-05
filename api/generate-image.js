@@ -11,7 +11,6 @@ export default async function handler(req) {
       );
     }
 
-    // 🧠 Utilise le modèle complet gpt-4o pour la vision
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -22,15 +21,11 @@ export default async function handler(req) {
         model: "gpt-4o",
         messages: [
           {
-            role: "system",
-            content: "Tu es un expert en mode et SEO e-commerce.",
-          },
-          {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Analyse cette image de produit et rédige : 1️⃣ un titre SEO court (<110 caractères), 2️⃣ une meta description (140-160 caractères), 3️⃣ 40 hashtags Vinted (#...), et 4️⃣ 40 hashtags Shopify (séparés par virgules).",
+                text: "Décris précisément le produit visible sur cette image en une phrase courte. Si tu ne vois rien ou si l’image est vide, dis-le clairement.",
               },
               {
                 type: "image_url",
@@ -44,22 +39,8 @@ export default async function handler(req) {
 
     const data = await response.json();
 
-    // 🧾 Affiche ce que l’API a réellement renvoyé (utile si erreur)
-    if (!data.choices || !data.choices[0]) {
-      return new Response(
-        JSON.stringify({
-          error: "Réponse vide d’OpenAI",
-          details: data,
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const result = data.choices[0].message.content;
-    return new Response(JSON.stringify({ result }), {
+    // 💬 Retour complet pour comprendre ce qu'OpenAI répond
+    return new Response(JSON.stringify(data, null, 2), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
