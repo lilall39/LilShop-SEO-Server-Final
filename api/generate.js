@@ -1,8 +1,8 @@
-export const config = {
+ export const config = {
   runtime: "edge",
 };
 
-// ✅ Version finale améliorée Lil-Shop SEO (Edge Function)
+// ✅ Lil-Shop SEO – Version améliorée avec détection de l’état
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
@@ -26,16 +26,21 @@ export default async function handler(req) {
         messages: [
           {
             role: "system",
-            content: `Tu es un expert SEO e-commerce pour Shopify et Vinted. 
-Ton objectif est de produire des textes parfaits pour Google Search, clairs, naturels et vendeurs.
-Tu respectes toujours ces contraintes :
-- Titre SEO : moins de 110 caractères
-- Meta description : entre 140 et 160 caractères
-- Ton : professionnel mais accessible, inspiré du style des grandes boutiques de mode
-- Inclure la marque, la matière, le style, l’état (ex : seconde main TBE), et les mots clés principaux.
-- Ne jamais écrire un titre tout en majuscules.
-- Ne jamais répéter "Produit :" ou "Description :" dans la sortie.
-- Toujours formater ainsi : 
+            content: `Tu es un expert SEO e-commerce pour Shopify et Vinted.
+Ton objectif : produire des textes parfaits pour Google Search, clairs, naturels et vendeurs.
+
+🧠 Règles :
+- Titre SEO : < 110 caractères
+- Meta description : 140–160 caractères
+- Inclure la marque, la matière, le style, l’état, et les mots-clés principaux
+- Déterminer intelligemment l’état :
+   • Si le texte contient "neuf" ou "neuve" → écrire "article neuf"
+   • Si le texte contient "TBE", "seconde main", "occasion" → écrire "seconde main TBE"
+   • Si le texte contient "vintage" → écrire "vintage"
+   • Sinon, ne pas ajouter de mention d’état
+- Ne jamais tout mettre en majuscules
+- Ton : professionnel, clair, fluide, inspiré du style des boutiques de mode
+- Format de sortie obligatoire :
 **Titre SEO :** ...
 **Meta Description :** ...
 **Hashtags Vinted :** ...
@@ -44,16 +49,16 @@ Tu respectes toujours ces contraintes :
           {
             role: "user",
             content: `Nom du produit : ${nomProduit}
-Courte description : ${descProduit}
+Description : ${descProduit}
 
 Génère :
-1️⃣ Un titre SEO optimisé pour Google (moins de 110 caractères)
+1️⃣ Un titre SEO optimisé pour Google (< 110 caractères)
 2️⃣ Une meta description de 140–160 caractères
 3️⃣ 40 hashtags Vinted vendeurs et pertinents
 4️⃣ 40 hashtags Shopify séparés par des virgules
 
-⚠️ Dans les hashtags, inclure systématiquement :
-#${nomProduit.replace(/\s+/g, '').toLowerCase()}, #pascher, #tendance, #mode, #femme, #fille, #homme, #enfant, #pascher, #jeune, #cadeau, #idéeCadeau, #fête, #cadeauFemme, #cadeauArtisanal, #italie, #espagne, #portugal, #angleterre, #suisse, #belgique, #paysBas.`,
+Inclure systématiquement ces hashtags fixes : 
+#${nomProduit.replace(/\s+/g, '').toLowerCase()}, #pascher, #tendance, #mode, #femme, #fille, #homme, #enfant, #jeune, #cadeau, #idéeCadeau, #fête, #cadeauFemme, #cadeauArtisanal, #italie, #espagne, #portugal, #angleterre, #suisse, #belgique, #paysBas.`,
           },
         ],
       }),
@@ -77,4 +82,5 @@ Génère :
     );
   }
 }
+
 
