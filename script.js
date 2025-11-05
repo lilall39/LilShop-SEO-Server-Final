@@ -31,6 +31,45 @@ async function pingGoogle() {
 }
 
 
+
+// 🧩 Fonction pour formater automatiquement le champ "name" du produit
+function formaterTitreProduit(titreBrut) {
+  if (!titreBrut) return "";
+
+  // 1️⃣ Nettoyer les espaces et ponctuations doubles
+  let titre = titreBrut
+    .replace(/\s*[,;:.!?]\s*/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  // 2️⃣ Supprimer les emojis ou caractères spéciaux
+  titre = titre.replace(/[^\wÀ-ÿ ,–-]/g, "");
+
+  // 3️⃣ Supprimer "neuf" si "seconde main" est présent (évite confusion)
+  if (titre.toLowerCase().includes("seconde main")) {
+    titre = titre.replace(/neuf/gi, "");
+  }
+
+  // 4️⃣ Si "seconde main" n’est pas déjà mentionné, l’ajouter à la fin
+  if (!titre.toLowerCase().includes("seconde main")) {
+    titre += ", seconde main TBE";
+  }
+
+  // 5️⃣ Limiter la longueur à 110 caractères pour le JSON-LD
+  if (titre.length > 110) {
+    titre = titre.slice(0, 107).trim() + "...";
+  }
+
+  // 6️⃣ Uniformiser les tirets longs et espaces
+  titre = titre
+    .replace(/\s*-\s*/g, " – ")
+    .replace(/\s*–\s*/g, " – ");
+
+  return titre;
+}
+
+
+
 // 🟣 Génération SEO + Hashtags
 async function genererMeta() {
   const nomProduit = document.getElementById("nomProduit").value.trim();
@@ -44,10 +83,13 @@ async function genererMeta() {
   hashtagsShopify.textContent = "";
 
   try {
+    // 🧠 On formate le titre avant l'envoi à l'API
+    const nomFormate = formaterTitreProduit(nomProduit);
+
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nomProduit, descProduit })
+      body: JSON.stringify({ nomProduit: nomFormate, descProduit })
     });
 
     const data = await response.json();
@@ -111,7 +153,7 @@ async function genererMeta() {
     shopify = shopifyArray.slice(0, 40).join(", ");
 
     // ✅ Affichage final
-    resultMeta.innerHTML = `<b>Titre SEO :</b> ${titre}<br><br><b>Meta Description :</b> ${meta}`;
+    resultMeta.innerHTML = `<b>Titre SEO :</b> ${nomFormate}<br><br><b>Meta Description :</b> ${meta}`;
     hashtagsVinted.innerHTML = `<b>Hashtags Vinted :</b><br>${vinted}`;
     hashtagsShopify.innerHTML = `<b>Hashtags Shopify :</b><br>${shopify}`;
 
@@ -124,6 +166,7 @@ async function genererMeta() {
     resultMeta.textContent = "❌ Une erreur s'est produite : " + error.message;
   }
 }
+
 
 
 // 🧾 Copie individuelle
@@ -144,6 +187,7 @@ function copierTexte(texte) {
 }
 
 
+
 // 🔄 Recommencer
 function recommencer() {
   document.getElementById("nomProduit").value = "";
@@ -155,4 +199,3 @@ function recommencer() {
   document.getElementById("copyVintedBtn").style.display = "none";
   document.getElementById("copyShopifyBtn").style.display = "none";
 }
-
