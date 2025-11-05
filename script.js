@@ -1,201 +1,41 @@
- // 🟢 Indexation Google améliorée  
-async function pingGoogle() {
-  const sitemapUrl = document.getElementById("sitemapUrl").value.trim();
-  const resultPing = document.getElementById("resultPing");
-
-  if (!sitemapUrl.startsWith("http")) {
-    resultPing.innerHTML = "⚠️ Veuillez entrer une URL valide (commençant par http ou https).";
-    return;
-  }
-
-  resultPing.innerHTML = "⏳ Envoi du sitemap à Google...";
-  try {
-    const response = await fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
-    if (response.ok) {
-      resultPing.innerHTML = `
-        ✅ <b>Sitemap soumis à Google avec succès !</b><br>
-        🕓 Le traitement peut prendre quelques heures.<br><br>
-        🔎 <a href="https://search.google.com/search-console/sitemaps" target="_blank">
-          Vérifier dans Google Search Console
-        </a>
-      `;
-    } else {
-      resultPing.innerHTML = "⚠️ Erreur lors de la soumission à Google.";
-    }
-
-    // 🌀 Soumission aussi à Bing
-    await fetch(`https://www.bing.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`);
-  } catch (error) {
-    resultPing.innerHTML = "❌ Une erreur s'est produite : " + error.message;
-  }
-}
-
-
-
-// 🧩 Fonction pour formater automatiquement le champ "name" du produit
-function formaterTitreProduit(titreBrut) {
-  if (!titreBrut) return "";
-
-  // 1️⃣ Nettoyer les espaces et ponctuations doubles
-  let titre = titreBrut
-    .replace(/\s*[,;:.!?]\s*/g, ", ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  // 2️⃣ Supprimer les emojis ou caractères spéciaux
-  titre = titre.replace(/[^\wÀ-ÿ ,–-]/g, "");
-
-  // 3️⃣ Supprimer "neuf" si "seconde main" est présent (évite confusion)
-  if (titre.toLowerCase().includes("seconde main")) {
-    titre = titre.replace(/neuf/gi, "");
-  }
-
-  // 4️⃣ Si "seconde main" n’est pas déjà mentionné, l’ajouter à la fin
-  if (!titre.toLowerCase().includes("seconde main")) {
-    titre += ", seconde main TBE";
-  }
-
-  // 5️⃣ Limiter la longueur à 110 caractères pour le JSON-LD
-  if (titre.length > 110) {
-    titre = titre.slice(0, 107).trim() + "...";
-  }
-
-  // 6️⃣ Uniformiser les tirets longs et espaces
-  titre = titre
-    .replace(/\s*-\s*/g, " – ")
-    .replace(/\s*–\s*/g, " – ");
-
-  return titre;
-}
-
-
-
-// 🟣 Génération SEO + Hashtags
+ // ✅ Lil-Shop SEO – Front-end connecté au serveur /api/generate
 async function genererMeta() {
   const nomProduit = document.getElementById("nomProduit").value.trim();
   const descProduit = document.getElementById("descProduit").value.trim();
   const resultMeta = document.getElementById("resultMeta");
-  const hashtagsVinted = document.getElementById("hashtagsVinted");
-  const hashtagsShopify = document.getElementById("hashtagsShopify");
+
+  if (!nomProduit || !descProduit) {
+    resultMeta.textContent = "⚠️ Merci de renseigner un nom et une description.";
+    return;
+  }
 
   resultMeta.textContent = "⏳ Génération en cours...";
-  hashtagsVinted.textContent = "";
-  hashtagsShopify.textContent = "";
 
   try {
-    // 🧠 On formate le titre avant l'envoi à l'API
-    const nomFormate = formaterTitreProduit(nomProduit);
-
+    // 🔄 On envoie la requête vers ton serveur Vercel (et non vers l’API OpenAI)
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nomProduit: nomFormate, descProduit })
+      body: JSON.stringify({ nomProduit, descProduit }),
     });
 
     const data = await response.json();
 
-    if (!data || typeof data.result !== "string") {
-      console.log("Réponse serveur :", data);
-      throw new Error("Le serveur a répondu, mais le format est inattendu.");
+    if (data.error) {
+      resultMeta.textContent = "❌ Erreur : " + data.error;
+    } else {
+      // 🧾 Affiche proprement le résultat généré par ton serveur
+      resultMeta.textContent = data.result;
     }
-
-    const texte = data.result;
-
-    // Extraction
-    const titre = texte.match(/\*\*Titre SEO\s*:\*\*\s*(.+)/i)?.[1] || "Titre non trouvé";
-    const meta = texte.match(/\*\*Meta Description\s*:\*\*\s*(.+)/i)?.[1] || "Meta description non trouvée";
-    let vinted = texte.match(/\*\*Hashtags Vinted\s*:\*\*\s*([\s\S]+?)\n\*\*Hashtags Shopify/i)?.[1]?.trim() || "";
-    let shopify = texte.match(/\*\*Hashtags Shopify\s*:\*\*\s*([\s\S]+)/i)?.[1]?.trim() || "";
-
-    // 🧱 Vérification des hashtags Vinted
-    let hashtagsArray = vinted.match(/#[\wàâçéèêëîïôöùûüÿ\-]+/gi) || [];
-
-    // Hashtags fixes à ajouter
-    const fixedTagsVinted = [
-      "#italie", "#espagne", "#portugal", "#angleterre", "#suisse", "#belgique", "#paysbas",
-      "#pascher", "#tendance", "#mode", "#femme", "#homme", "#enfant", "#jeune",
-      "#cadeau", "#idée", "#fête", "#cadeaufemme", "#cadeauartisanal"
-    ];
-
-    // ✅ Ajoute les hashtags fixes s’ils manquent
-    fixedTagsVinted.forEach(tag => {
-      if (!hashtagsArray.includes(tag)) hashtagsArray.push(tag);
-    });
-
-    // Complète jusqu’à 40 hashtags maximum
-    while (hashtagsArray.length < 40) {
-      const next = fixedTagsVinted[hashtagsArray.length % fixedTagsVinted.length];
-      hashtagsArray.push(next);
-    }
-
-    // Nettoyage final et recomposition
-    hashtagsArray = [...new Set(hashtagsArray)];
-    vinted = hashtagsArray.slice(0, 40).join(" ");
-
-    // 🛍️ Shopify : assurer au moins 40 mots-clés et inclure les pays
-    let shopifyArray = shopify
-      .replace(/#/g, "") // enlève les #
-      .split(/,|\s+/)
-      .map(t => t.trim())
-      .filter(Boolean);
-
-    const fixedTagsShopify = fixedTagsVinted.map(tag => tag.replace("#", ""));
-    fixedTagsShopify.forEach(tag => {
-      if (!shopifyArray.includes(tag)) shopifyArray.push(tag);
-    });
-
-    while (shopifyArray.length < 40) {
-      const next = fixedTagsShopify[shopifyArray.length % fixedTagsShopify.length];
-      shopifyArray.push(next);
-    }
-
-    shopifyArray = [...new Set(shopifyArray)];
-    shopify = shopifyArray.slice(0, 40).join(", ");
-
-    // ✅ Affichage final
-    resultMeta.innerHTML = `<b>Titre SEO :</b> ${nomFormate}<br><br><b>Meta Description :</b> ${meta}`;
-    hashtagsVinted.innerHTML = `<b>Hashtags Vinted :</b><br>${vinted}`;
-    hashtagsShopify.innerHTML = `<b>Hashtags Shopify :</b><br>${shopify}`;
-
-    // Boutons de copie visibles
-    document.getElementById("copyMetaBtn").style.display = "inline-block";
-    document.getElementById("copyVintedBtn").style.display = "inline-block";
-    document.getElementById("copyShopifyBtn").style.display = "inline-block";
-
   } catch (error) {
-    resultMeta.textContent = "❌ Une erreur s'est produite : " + error.message;
+    resultMeta.textContent = "❌ Une erreur s’est produite : " + error.message;
   }
 }
 
-
-
-// 🧾 Copie individuelle
-function copierMeta() {
-  copierTexte(document.getElementById("resultMeta").innerText);
-}
-function copierVinted() {
-  copierTexte(document.getElementById("hashtagsVinted").innerText);
-}
-function copierShopify() {
-  copierTexte(document.getElementById("hashtagsShopify").innerText);
-}
-function copierTexte(texte) {
-  navigator.clipboard.writeText(texte);
-  const msg = document.getElementById("copyMsg");
-  msg.textContent = "✅ Copié !";
-  setTimeout(() => (msg.textContent = ""), 2000);
-}
-
-
-
-// 🔄 Recommencer
+// 🔁 Bouton "Recommencer" : on efface tout
 function recommencer() {
   document.getElementById("nomProduit").value = "";
   document.getElementById("descProduit").value = "";
   document.getElementById("resultMeta").textContent = "";
-  document.getElementById("hashtagsVinted").textContent = "";
-  document.getElementById("hashtagsShopify").textContent = "";
-  document.getElementById("copyMetaBtn").style.display = "none";
-  document.getElementById("copyVintedBtn").style.display = "none";
-  document.getElementById("copyShopifyBtn").style.display = "none";
 }
+
