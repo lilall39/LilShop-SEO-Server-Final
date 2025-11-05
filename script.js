@@ -1,4 +1,5 @@
  // ✅ Lil-Shop SEO – Front-end connecté au serveur /api/generate
+
 async function genererMeta() {
   const nomProduit = document.getElementById("nomProduit").value.trim();
   const descProduit = document.getElementById("descProduit").value.trim();
@@ -38,4 +39,6 @@ function recommencer() {
   document.getElementById("descProduit").value = "";
   document.getElementById("resultMeta").textContent = "";
 }
+
+
 
