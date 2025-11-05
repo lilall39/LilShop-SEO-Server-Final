@@ -1,12 +1,9 @@
- export const config = {
-  runtime: "edge",
-};
+  export const config = { runtime: "edge" };
 
-// ✅ Lil-Shop SEO – Version finale logique (neuf / TBE / vintage)
+// ✅ Lil-Shop SEO — version fiable : état injecté côté serveur
 export default async function handler(req) {
   try {
     const { nomProduit, descProduit } = await req.json();
-
     if (!nomProduit || !descProduit) {
       return new Response(
         JSON.stringify({ error: "Champs manquants" }),
@@ -14,38 +11,19 @@ export default async function handler(req) {
       );
     }
 
-    // 🧠 Détection locale intelligente
+    // 🔎 Détection locale de l’état
     const descLower = descProduit.toLowerCase();
     let etat = "";
-    let forcerNeuf = false;
-    let forcerTBE = false;
-    let forcerVintage = false;
-
-    if (descLower.includes("neuf") || descLower.includes("neuve")) {
-      etat = "article neuf";
-      forcerNeuf = true;
-    } else if (
+    if (descLower.includes("neuf") || descLower.includes("neuve")) etat = "article neuf";
+    else if (descLower.includes("vintage")) etat = "vintage";
+    else if (
       descLower.includes("tbe") ||
-      descLower.includes("seconde main") ||
-      descLower.includes("occasion")
-    ) {
+      descLower.includes("occasion") ||
+      descLower.includes("seconde main")
+    )
       etat = "seconde main TBE";
-      forcerTBE = true;
-    } else if (descLower.includes("vintage")) {
-      etat = "vintage";
-      forcerVintage = true;
-    }
 
-    // 🧩 Règle : si "neuf" est présent, on interdit toute mention de "seconde main"
-    const contrainteEtat =
-      forcerNeuf
-        ? "Le titre et la description doivent clairement indiquer que le produit est neuf. Interdiction absolue de mentionner 'seconde main' ou 'TBE'."
-        : forcerTBE
-        ? "Le titre doit inclure 'seconde main TBE'."
-        : forcerVintage
-        ? "Le titre doit inclure le mot 'vintage'."
-        : "Ne pas indiquer d’état si non précisé.";
-
+    // 🧠 Appel OpenAI sans parler d’état
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -58,16 +36,13 @@ export default async function handler(req) {
         messages: [
           {
             role: "system",
-            content: `Tu es un expert SEO e-commerce pour Shopify et Vinted.
-Ton objectif : produire des textes optimisés pour Google, clairs, vendeurs, et adaptés à l’état du produit.
-
-🧠 Règles :
-- Titre SEO : < 110 caractères
+            content: `Tu es un expert SEO e-commerce (Shopify & Vinted).
+Règles :
+- Titre SEO : <110 caractères
 - Meta description : 140–160 caractères
-- Inclure la marque, la matière, la couleur, le style, et l’état du produit
-- Ton : professionnel, fluide, et vendeur
-- Ne jamais tout écrire en majuscules
-- Sortie formatée ainsi :
+- Inclure marque, matière, couleur, style
+- Ne pas inventer d’état (ne mentionne pas neuf/TBE/vintage)
+- Format :
 **Titre SEO :** ...
 **Meta Description :** ...
 **Hashtags Vinted :** ...
@@ -75,43 +50,59 @@ Ton objectif : produire des textes optimisés pour Google, clairs, vendeurs, et 
           },
           {
             role: "user",
-            content: `
-Nom du produit : ${nomProduit}
+            content: `Nom du produit : ${nomProduit}
 Description : ${descProduit}
-État détecté : ${etat || "non précisé"}
-${contrainteEtat}
 
 Génère :
-1️⃣ Un titre SEO optimisé Google (< 110 caractères)
-2️⃣ Une meta description de 140–160 caractères
-3️⃣ 40 hashtags Vinted vendeurs
-4️⃣ 40 hashtags Shopify séparés par des virgules
+1️⃣ Titre SEO (<110 caractères)
+2️⃣ Meta description 140–160 caractères
+3️⃣ 40 hashtags Vinted
+4️⃣ 40 hashtags Shopify (séparés par virgules)
 
-Inclure systématiquement ces hashtags fixes :
+Inclure systématiquement :
 #${nomProduit.replace(/\s+/g, '').toLowerCase()}, #pascher, #tendance, #mode, #femme, #fille, #homme, #enfant, #jeune, #cadeau, #idéeCadeau, #fête, #cadeauFemme, #cadeauArtisanal, #italie, #espagne, #portugal, #angleterre, #suisse, #belgique, #paysBas.`,
           },
         ],
       }),
     });
 
-    const result = await response.json();
+    const data = await response.json();
+    let result = data?.choices?.[0]?.message?.content || "";
 
-    if (!result.choices || !result.choices[0].message) {
-      throw new Error("Réponse inattendue de l’API OpenAI");
+    // 🪄 Injection de l’état dans le titre côté serveur
+    if (etat) {
+      result = result.replace(
+        /(\*\*Titre SEO :\*\*\s*)(.*)/i,
+        (_, prefix, titre) => {
+          // Si déjà un état incohérent, on le remplace
+          titre = titre.replace(/seconde main TBE|article neuf|vintage/gi, "").trim();
+          return `${prefix}${titre} – ${etat}`;
+        }
+      );
+
+      // 🧾 Ajout automatique de la mention pour article neuf
+      if (etat === "article neuf") {
+        result = result.replace(
+          /(\*\*Meta Description :\*\*\s*)(.*)/i,
+          (_, prefix, meta) =>
+            `${prefix}${meta} 🧾Prix d’origine payé en boutique extérieure lors de l’achat neuf.`
+        );
+      }
     }
 
-    return new Response(
-      JSON.stringify({ result: result.choices[0].message.content }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    console.error("Erreur API :", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ result }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("Erreur API :", err);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
+
 
 
 
