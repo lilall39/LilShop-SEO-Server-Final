@@ -60,6 +60,35 @@ function copierMeta() { copierTexte("Meta Description"); }
 function copierHashtagsVinted() { copierTexte("Hashtags Vinted"); }
 function copierHashtagsShopify() { copierTexte("Hashtags Shopify"); }
 
+// ✅ Fonction d'analyse d'image
+async function analyserImage() {
+  const input = document.getElementById("imageInput");
+  const result = document.getElementById("resultImage");
+
+  if (!input || !input.files.length) {
+    result.textContent = "❌ Merci de choisir une image.";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadend = async () => {
+    const base64Image = reader.result.split(",")[1];
+    result.textContent = "⏳ Analyse en cours...";
+    try {
+      const response = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64Image }),
+      });
+      const data = await response.json();
+      result.textContent = data.result || "⚠️ Aucun résultat reçu.";
+    } catch (err) {
+      result.textContent = "❌ Erreur d’analyse : " + err.message;
+    }
+  };
+
+  reader.readAsDataURL(input.files[0]);
+}
 
 
 
