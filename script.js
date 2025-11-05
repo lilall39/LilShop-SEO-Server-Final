@@ -1,94 +1,47 @@
- // ✅ Lil-Shop SEO – Front-end connecté au serveur /api/generate
-async function genererMeta() {
-  const nomProduit = document.getElementById("nomProduit").value.trim();
-  const descProduit = document.getElementById("descProduit").value.trim();
-  const resultMeta = document.getElementById("resultMeta");
-  const copyButtons = document.getElementById("copyButtons");
+ // Fonction appelée quand on clique sur "Analyser l’image"
+async function analyserImage() {
+  const input = document.querySelector("#imageInput");
+  const message = document.querySelector("#resultMeta");
+  message.textContent = "Analyse en cours...";
 
-  if (!nomProduit || !descProduit) {
-    resultMeta.textContent = "⚠️ Merci de renseigner un nom et une description.";
-    copyButtons.style.display = "none";
+  if (!input.files.length) {
+    message.textContent = "❌ Choisis d’abord une image !";
     return;
   }
 
-  resultMeta.textContent = "⏳ Génération en cours...";
-  copyButtons.style.display = "none";
+  const file = input.files[0];
+  const base64 = await toBase64(file);
 
   try {
-    const response = await fetch("/api/generate", {
+    const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nomProduit, descProduit }),
+      body: JSON.stringify({ imageBase64: base64.split(",")[1] }),
     });
 
     const data = await response.json();
 
     if (data.error) {
-      resultMeta.textContent = "❌ Erreur : " + data.error;
+      message.textContent = "⚠️ Erreur : " + data.error;
+      console.log("Réponse erreur :", data);
     } else {
-      resultMeta.textContent = data.result;
-      copyButtons.style.display = "block";
+      message.textContent = "✅ Résultat :\n\n" + data.result;
     }
-  } catch (error) {
-    resultMeta.textContent = "❌ Une erreur s’est produite : " + error.message;
-    copyButtons.style.display = "none";
+  } catch (err) {
+    message.textContent = "❌ Erreur réseau : " + err.message;
   }
 }
 
-function recommencer() {
-  document.getElementById("nomProduit").value = "";
-  document.getElementById("descProduit").value = "";
-  document.getElementById("resultMeta").textContent = "";
-  document.getElementById("copyButtons").style.display = "none";
+// Convertir un fichier image en base64
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
 }
 
-// ✂️ Fonctions de copie
-function copierTexte(motif) {
-  const texte = document.getElementById("resultMeta").textContent;
-  const regex = new RegExp(`${motif}\\s*:?\\s*(.*?)\\s*(?=(\\n[A-Z]|$))`, "is");
-  const match = texte.match(regex);
-  if (match && match[1]) {
-    navigator.clipboard.writeText(match[1].trim());
-    alert(`✅ ${motif} copié !`);
-  } else {
-    alert(`❌ Impossible de copier ${motif}.`);
-  }
-}
-
-function copierTitre() { copierTexte("Titre SEO"); }
-function copierMeta() { copierTexte("Meta Description"); }
-function copierHashtagsVinted() { copierTexte("Hashtags Vinted"); }
-function copierHashtagsShopify() { copierTexte("Hashtags Shopify"); }
-
-// ✅ Fonction d'analyse d'image
-async function analyserImage() {
-  const input = document.getElementById("imageInput");
-  const result = document.getElementById("resultImage");
-
-  if (!input || !input.files.length) {
-    result.textContent = "❌ Merci de choisir une image.";
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onloadend = async () => {
-    const base64Image = reader.result.split(",")[1];
-    result.textContent = "⏳ Analyse en cours...";
-    try {
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64Image }),
-      });
-      const data = await response.json();
-      result.textContent = data.result || "⚠️ Aucun résultat reçu.";
-    } catch (err) {
-      result.textContent = "❌ Erreur d’analyse : " + err.message;
-    }
-  };
-
-  reader.readAsDataURL(input.files[0]);
-}
 
 
 
