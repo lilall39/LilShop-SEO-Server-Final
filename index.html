@@ -25,7 +25,8 @@
     <h2>2️⃣ Génération de contenu SEO</h2>
     <input type="text" id="nomProduit" placeholder="Nom du produit">
     <textarea id="descProduit" placeholder="Courte description..."></textarea><br>
-    <button onclick="genererMeta()">Générer le titre + meta + hashtags</button>
+   <button onclick="avantGeneration(); genererMeta()">Générer le titre + meta + hashtags</button>
+
     <button onclick="recommencer()">🔄 Recommencer</button>
 
     <pre id="resultMeta"></pre>
@@ -45,5 +46,20 @@
   <footer>🧾 Lil-Shop – Outil SEO partagé</footer>
 
   <script src="script.js"></script>
+<script>
+function nettoyerTitre(titre) {
+  titre = titre.replace(/\s+/g, ' ').trim();
+  titre = titre.replace(/[.]{2,}/g, '.').replace(/[-]{2,}/g, '-');
+  if (titre.length > 110) titre = titre.slice(0, 107) + "...";
+  return titre;
+}
+
+function avantGeneration() {
+  let champ = document.getElementById("nomProduit");
+  champ.value = nettoyerTitre(champ.value);
+}
+</script>
+
+
 </body>
 </html>
